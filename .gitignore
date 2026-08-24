@@ -94,3 +94,13 @@ CHANGELOG.ignore.md
 # Python bytecode files
 __pycache__/
 *.pyc
+
+# JaySoft LocalAI runtime state and model artifacts
+/runtime/
+/models/
+/localai-data/
+/ollama/
+*.gguf
+*.safetensors
+*.onnx
+*.pid

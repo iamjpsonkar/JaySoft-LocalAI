@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+ROOT="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
+LOCALAI_HOME="${LOCALAI_HOME:-$HOME/.localai}"
+MODEL="${LOCALAI_MODEL:-qwen2.5-coder:3b}"
+export LOCALAI_HOME CODEX_HOME="${CODEX_HOME:-$LOCALAI_HOME/codex}"
+export OLLAMA_MODELS="${OLLAMA_MODELS:-$LOCALAI_HOME/models}"
+export OLLAMA_HOME="${OLLAMA_HOME:-$LOCALAI_HOME/ollama}"
+export OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
+export OLLAMA_CONTEXT_LENGTH="${OLLAMA_CONTEXT_LENGTH:-8192}"
+export PATH="$ROOT/runtime/bin:$PATH"
+mkdir -p "$CODEX_HOME" "$OLLAMA_MODELS" "$OLLAMA_HOME"
+case "${1:-}" in
+  runtime|models|serve|stop|benchmark) exec "$ROOT/scripts/localai-runtime.sh" "$@" ;;
+esac
+"$ROOT/scripts/localai-runtime.sh" ensure >/dev/null
+if [ -x "$ROOT/codex-rs/target/release/localai" ]; then
+  CLI="$ROOT/codex-rs/target/release/localai"
+elif [ -x "$ROOT/codex-rs/target/debug/localai" ]; then
+  CLI="$ROOT/codex-rs/target/debug/localai"
+elif command -v codex >/dev/null 2>&1; then
+  CLI="$(command -v codex)"
+else
+  echo "localai: no CLI binary found; run ./scripts/install.sh" >&2
+  exit 1
+fi
+exec "$CLI" --oss --local-provider ollama --model "$MODEL" "$@"
